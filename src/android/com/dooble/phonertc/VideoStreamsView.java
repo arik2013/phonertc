@@ -1,11 +1,13 @@
 package com.dooble.phonertc;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
+import android.view.ViewGroup;
 
 import org.webrtc.VideoRenderer.I420Frame;
 
@@ -93,8 +95,29 @@ public class VideoStreamsView
     requestRender();
   }
 
+  private float getScaleFactor (int streamWidth, int streamHeight) {
+    ViewGroup.LayoutParams layoutParams = getLayoutParams();
+    float factor = Math.min(layoutParams.width / (float) streamWidth,
+        layoutParams.height / (float) streamHeight);
+    return factor;
+  }
+
+  private void scaleToFit (final int width, final int height) {
+    ((Activity) getContext()).runOnUiThread(new Runnable() {
+      public void run () {
+        ViewGroup.LayoutParams layoutParams = getLayoutParams();
+        layoutParams.width = width;
+        layoutParams.height = height;
+        setLayoutParams(layoutParams);
+        float scaleFactor = getScaleFactor(width, height);
+        setScaleX(scaleFactor);
+        setScaleY(scaleFactor);
+      }
+    });
+  }
+
   /** Inform this View of the dimensions of frames coming from |stream|. */
-  public void setSize(Endpoint stream, int width, int height) {
+  public void setSize(Endpoint stream, final int width, final int height) {
     // Generate 3 texture ids for Y/U/V and place them into |textures|,
     // allocating enough storage for |width|x|height| pixels.
     int[] textures = yuvTextures[stream == Endpoint.LOCAL ? 0 : 1];
@@ -116,6 +139,8 @@ public class VideoStreamsView
           GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
     }
     checkNoGLES2Error();
+
+    scaleToFit(width, height);
   }
 
   @Override
@@ -185,7 +210,7 @@ public class VideoStreamsView
   }
 
   // Upload the YUV planes from |frame| to |textures|.
-  private void texImage2D(I420Frame frame, int[] textures) {
+  private void texImage2D(final I420Frame frame, int[] textures) {
     for (int i = 0; i < 3; ++i) {
       ByteBuffer plane = frame.yuvPlanes[i];
       GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + i);
@@ -198,6 +223,8 @@ public class VideoStreamsView
           GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, plane);
     }
     checkNoGLES2Error();
+
+    scaleToFit(frame.width, frame.height);
   }
 
   // Draw |textures| using |vertices| (X,Y coordinates).
