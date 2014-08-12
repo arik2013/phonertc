@@ -47,13 +47,13 @@ function getLayoutParams (videoElement) {
 exports.call = function (options) {
   // options should contain a video option if video is enabled
   // sets the initial video options a dom listener needs to be added to watch for movements.
-  var video;
+  var execOptions = options || {};
   if (options.video) {
     videoElements = {
       localVideo: options.video.localVideo,
       remoteVideo: options.video.remoteVideo
     };
-    video = {
+    execOptions.video = {
       localVideo: getLayoutParams(videoElements.localVideo),
       remoteVideo: getLayoutParams(videoElements.remoteVideo)
     };
@@ -72,7 +72,7 @@ exports.call = function (options) {
     null,
     'PhoneRTCPlugin',
     'call',
-    [options.isInitator, options.turn.host, options.turn.username, options.turn.password, video]);
+    [JSON.stringify(execOptions)]);
 };
 
 exports.setEnabledMedium = function (mediumType, enabled) {
