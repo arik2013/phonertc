@@ -74,12 +74,16 @@ public class PhoneRTCPlugin extends CordovaPlugin {
 			CallbackContext callbackContext) throws JSONException {
 
 		if (action.equals(ACTION_CALL)) {
-			isInitiator = args.getBoolean(0);
+			JSONObject options = new JSONObject(args.getString(0));
+			isInitiator = options.getBoolean("isInitiator");
 
-			final String turnServerHost = args.getString(1);
-			final String turnUsername = args.getString(2);
-			final String turnPassword = args.getString(3);
-			final JSONObject video = (!args.isNull(4)) ? args.getJSONObject(4) : null;
+			JSONObject turn = options.getJSONObject("turn");
+			final String turnServerHost = turn.getString("host");
+			final String turnUsername = turn.getString("username");
+			final String turnPassword = turn.getString("password");
+			// TODO put ternary logic into helper function
+			final JSONObject video = (!options.isNull("video")) ? options.getJSONObject("video") : null;
+			final String remoteOffer = (!options.isNull("remoteOffer")) ? options.getString("remoteOffer") : null;
 
 			_callbackContext = callbackContext;
 			queuedRemoteCandidates = new LinkedList<IceCandidate>();
@@ -146,10 +150,15 @@ public class PhoneRTCPlugin extends CordovaPlugin {
 							localStream.addTrack(factory.createAudioTrack("ARDAMSa0", audioSource));
 							pc.addStream(localStream, new MediaConstraints());
 
+              Log.d("com.dooble.phonertc", "XXX JMF remoteOffer = " + remoteOffer);
 							if (isInitiator) {
 								pc.createOffer(sdpObserver, sdpMediaConstraints);
+							} else if (remoteOffer != null) {
+								SessionDescription sdp = new SessionDescription(
+										SessionDescription.Type.fromCanonicalForm("offer"),
+										preferISAC(remoteOffer));
+								pc.setRemoteDescription(sdpObserver, sdp);
 							}
-
 						}
 					});
 					}

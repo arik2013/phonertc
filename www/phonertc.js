@@ -53,7 +53,7 @@ exports.call = function (options) {
       localVideo: options.video.localVideo,
       remoteVideo: options.video.remoteVideo
     };
-    video = {
+    options.video = {
       localVideo: getLayoutParams(videoElements.localVideo),
       remoteVideo: getLayoutParams(videoElements.remoteVideo)
     };
@@ -72,7 +72,7 @@ exports.call = function (options) {
     null,
     'PhoneRTCPlugin',
     'call',
-    [options.isInitator, options.turn.host, options.turn.username, options.turn.password, video]);
+    [JSON.stringify(options)]);
 };
 
 exports.setEnabledMedium = function (mediumType, enabled) {
