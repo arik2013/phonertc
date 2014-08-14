@@ -6,6 +6,23 @@
 @synthesize remoteVideoView;
 @synthesize remoteVideoTrack;
 
+- (void)createPhoneRTCDelegate:(NSDictionary*)arguments andIsInitiator:(BOOL)isInitiatior
+{
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sendMessage:) name:@"SendMessage" object:nil];
+    NSString *turnServerHost = [[arguments objectForKey:@"turn"] objectForKey:@"host"];
+    NSString *turnUsername = [[arguments objectForKey:@"turn"] objectForKey:@"username"];
+    NSString *turnPassword = [[arguments objectForKey:@"turn"] objectForKey:@"password"];
+    RTCICEServer *stunServer = [[RTCICEServer alloc]
+                                initWithURI:[NSURL URLWithString:@"stun:stun.l.google.com:19302"]
+                                username: @""
+                                password: @""];
+    RTCICEServer *turnServer = [[RTCICEServer alloc]
+                                initWithURI:[NSURL URLWithString:turnServerHost]
+                                username: turnUsername
+                                password: turnPassword];
+    self.webRTC = [[PhoneRTCDelegate alloc] initWithDelegate:self andIsInitiator:isInitiatior andICEServers:@[stunServer, turnServer]];
+}
+
 - (void)setDescription: (CDVInvokedUrlCommand*)command
 {
     self.sendMessageCallbackId = command.callbackId;
@@ -15,39 +32,26 @@
                                JSONObjectWithData:[[command.arguments objectAtIndex:0] dataUsingEncoding:NSUTF8StringEncoding]
                                options:0
                                error:&error];
+    NSString *sdp = [arguments objectForKey:@"sdp"];
 
     if (self.webRTC) {
         // Get description has already been called. This is the caller
-        NSString *sdp = [arguments objectForKey:@"sdp"];
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
                                                  (unsigned long)NULL), ^(void) {
             [self.webRTC receiveAnswer:sdp];
         });
     } else {
         // This is the callee
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
-        [pluginResult setKeepCallbackAsBool:true];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sendMessage:) name:@"SendMessage" object:nil];
-        NSString *turnServerHost = [[arguments objectForKey:@"turn"] objectForKey:@"host"];
-        NSString *turnUsername = [[arguments objectForKey:@"turn"] objectForKey:@"username"];
-        NSString *turnPassword = [[arguments objectForKey:@"turn"] objectForKey:@"password"];
-        NSString *sdp = [arguments objectForKey:@"sdp"];
-        RTCICEServer *stunServer = [[RTCICEServer alloc]
-                                    initWithURI:[NSURL URLWithString:@"stun:stun.l.google.com:19302"]
-                                    username: @""
-                                    password: @""];
-        RTCICEServer *turnServer = [[RTCICEServer alloc]
-                                    initWithURI:[NSURL URLWithString:turnServerHost]
-                                    username: turnUsername
-                                    password: turnPassword];
-        self.webRTC = [[PhoneRTCDelegate alloc] initWithDelegate:self andIsInitiator:NO andICEServers:@[stunServer, turnServer]];
+        [self createPhoneRTCDelegate:arguments andIsInitiator:NO];
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
                                                  (unsigned long)NULL), ^(void) {
             [self.webRTC receiveOffer:sdp];
         });
 
     }
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
+    [pluginResult setKeepCallbackAsBool:true];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.sendMessageCallbackId];
 }
 
 - (void)getDescription: (CDVInvokedUrlCommand*)command
@@ -78,6 +82,7 @@
             remoteVideoView.hidden = NO;
             [self.webView.superview bringSubviewToFront:remoteVideoView];
             [self.webView.superview bringSubviewToFront:localVideoView];
+            [self.webView.superview setNeedsDisplay];
         }
         doVideo = YES;
     }
@@ -87,24 +92,12 @@
         [self.webRTC getDescription];
     } else {
         // caller. create self.webrtc
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
-        [pluginResult setKeepCallbackAsBool:true];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sendMessage:) name:@"SendMessage" object:nil];
-        NSString *turnServerHost = [[arguments objectForKey:@"turn"] objectForKey:@"host"];
-        NSString *turnUsername = [[arguments objectForKey:@"turn"] objectForKey:@"username"];
-        NSString *turnPassword = [[arguments objectForKey:@"turn"] objectForKey:@"password"];
-        RTCICEServer *stunServer = [[RTCICEServer alloc]
-                                    initWithURI:[NSURL URLWithString:@"stun:stun.l.google.com:19302"]
-                                    username: @""
-                                    password: @""];
-        RTCICEServer *turnServer = [[RTCICEServer alloc]
-                                    initWithURI:[NSURL URLWithString:turnServerHost]
-                                    username: turnUsername
-                                    password: turnPassword];
-        self.webRTC = [[PhoneRTCDelegate alloc] initWithDelegate:self andIsInitiator:YES andICEServers:@[stunServer, turnServer]];
+        [self createPhoneRTCDelegate:arguments andIsInitiator:YES];
         [self.webRTC getDescription];
     }
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
+    [pluginResult setKeepCallbackAsBool:true];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.sendMessageCallbackId];
 }
 
 - (void)updateVideoPosition:(CDVInvokedUrlCommand*)command
@@ -114,6 +107,8 @@
     NSDictionary *remoteVideo = [[command.arguments objectAtIndex:0] objectForKey:@"remoteVideo"];
     localVideoView.frame = CGRectMake([[localVideo objectForKey:@"x"] intValue], [[localVideo objectForKey:@"y"] intValue], [[localVideo objectForKey:@"width"] intValue], [[localVideo objectForKey:@"height"] intValue]);
     remoteVideoView.frame = CGRectMake([[remoteVideo objectForKey:@"x"] intValue], [[remoteVideo objectForKey:@"y"] intValue], [[remoteVideo objectForKey:@"width"] intValue], [[remoteVideo objectForKey:@"height"] intValue]);
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void)receiveMessage:(CDVInvokedUrlCommand*)command
@@ -124,6 +119,8 @@
                                              (unsigned long)NULL), ^(void) {
         [self.webRTC receiveMessage:message];
     });
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void)disconnect:(CDVInvokedUrlCommand*)command
@@ -132,6 +129,8 @@
                                              (unsigned long)NULL), ^(void) {
         [self.webRTC disconnect];
     });
+    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 - (void)sendMessage:(NSNotification *)notification {
@@ -153,6 +152,7 @@
     localVideoView.videoTrack = track;
     localVideoView.hidden = NO;
     [self.webView.superview bringSubviewToFront:localVideoView];
+    [self.webView.superview setNeedsDisplay];
 }
 
 - (void)addRemoteVideoTrack:(RTCVideoTrack *)track {
@@ -162,6 +162,7 @@
         remoteVideoView.hidden = NO;
         [self.webView.superview bringSubviewToFront:remoteVideoView];
         [self.webView.superview bringSubviewToFront:localVideoView];
+        [self.webView.superview setNeedsDisplay];
     } else {
         remoteVideoTrack = track;
     }
@@ -179,6 +180,7 @@
     remoteVideoView = nil;
     remoteVideoTrack = nil;
     self.webRTC = nil;
+    [self.webView.superview setNeedsDisplay];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
