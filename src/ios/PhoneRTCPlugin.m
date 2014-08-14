@@ -107,56 +107,6 @@
     }
 }
 
-- (void)call:(CDVInvokedUrlCommand*)command
-{
-    self.sendMessageCallbackId = command.callbackId;
-
-    NSError *error;
-    NSDictionary *arguments = [NSJSONSerialization
-                               JSONObjectWithData:[[command.arguments objectAtIndex:0] dataUsingEncoding:NSUTF8StringEncoding]
-                               options:0
-                               error:&error];
-
-    BOOL isInitiator = [[arguments objectForKey:@"isInitiator"] boolValue];
-	NSString *turnServerHost = [[arguments objectForKey:@"turn"] objectForKey:@"host"];
-	NSString *turnUsername = [[arguments objectForKey:@"turn"] objectForKey:@"username"];
-	NSString *turnPassword = [[arguments objectForKey:@"turn"] objectForKey:@"password"];
-    BOOL doVideo = NO;
-    if ([arguments objectForKey:@"video"]) {
-        NSDictionary *localVideo = [[arguments objectForKey:@"video"] objectForKey:@"localVideo"];
-        NSDictionary *remoteVideo = [[arguments objectForKey:@"video"] objectForKey:@"remoteVideo"];
-        localVideoView = [[RTCEAGLVideoView alloc] initWithFrame:CGRectMake([[localVideo objectForKey:@"x"] intValue], [[localVideo objectForKey:@"y"] intValue], [[localVideo objectForKey:@"width"] intValue], [[localVideo objectForKey:@"height"] intValue])];
-        localVideoView.hidden = YES;
-        localVideoView.userInteractionEnabled = NO;
-        [self.webView.superview addSubview:localVideoView];
-
-        remoteVideoView = [[RTCEAGLVideoView alloc] initWithFrame:CGRectMake([[remoteVideo objectForKey:@"x"] intValue], [[remoteVideo objectForKey:@"y"] intValue], [[remoteVideo objectForKey:@"width"] intValue], [[remoteVideo objectForKey:@"height"] intValue])];
-        remoteVideoView.hidden = YES;
-        remoteVideoView.userInteractionEnabled = NO;
-        [self.webView.superview addSubview:remoteVideoView];
-
-        doVideo = YES;
-    }
-    CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
-    [pluginResult setKeepCallbackAsBool:true];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sendMessage:) name:@"SendMessage" object:nil];
-    RTCICEServer *stunServer = [[RTCICEServer alloc]
-                                initWithURI:[NSURL URLWithString:@"stun:stun.l.google.com:19302"]
-                                username: @""
-                                password: @""];
-    RTCICEServer *turnServer = [[RTCICEServer alloc]
-                                initWithURI:[NSURL URLWithString:turnServerHost]
-                                username: turnUsername
-                                password: turnPassword];
-    self.webRTC = [[PhoneRTCDelegate alloc] initWithDelegate:self andIsInitiator:isInitiator andICEServers:@[stunServer, turnServer]];
-    if (isInitiator) {
-        [self.webRTC getDescription];
-    }
-//    [self.webRTC onICEServers:@[stunServer, turnServer]];
-}
-
 - (void)updateVideoPosition:(CDVInvokedUrlCommand*)command
 {
     // This will update the position of the video elements when the page moves

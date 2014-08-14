@@ -51,7 +51,6 @@
 @property(assign) BOOL isInitiator;
 
 + (NSString *)preferISAC:(NSString *)origSDP;
-- (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator;
 - (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator andICEServers:(NSArray*)servers;
 - (void)drainRemoteCandidates;
 

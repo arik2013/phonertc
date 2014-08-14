@@ -10,7 +10,8 @@
 @property(nonatomic, strong) RTCEAGLVideoView* remoteVideoView;
 @property(nonatomic, strong) RTCVideoTrack* remoteVideoTrack;
 @property(nonatomic, strong) RTCPeerConnectionFactory* factory;
-- (void)call:(CDVInvokedUrlCommand*)command;
+- (void)getDescription: (CDVInvokedUrlCommand*)command;
+- (void)setDescription: (CDVInvokedUrlCommand*)command;
 - (void)updateVideoPosition:(CDVInvokedUrlCommand*)command;
 - (void)receiveMessage:(CDVInvokedUrlCommand*)command;
 @end

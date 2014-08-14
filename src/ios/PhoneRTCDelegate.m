@@ -8,10 +8,6 @@
 @synthesize queuedRemoteCandidates = _queuedRemoteCandidates;
 @synthesize capturer = _capturer;
 
-//- (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator {
-//    return [self initWithDelegate:delegate andIsInitiator:isInitiator andDoVideo:false];
-//}
-
 - (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator andICEServers:(NSArray*)servers
 {
     self = [super init];
