@@ -8,21 +8,23 @@
 @synthesize queuedRemoteCandidates = _queuedRemoteCandidates;
 @synthesize capturer = _capturer;
 
-- (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator {
-    return [self initWithDelegate:delegate andIsInitiator:isInitiator andDoVideo:false];
-}
+//- (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator {
+//    return [self initWithDelegate:delegate andIsInitiator:isInitiator andDoVideo:false];
+//}
 
-- (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator andDoVideo:(BOOL)doVideo{
+- (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator andICEServers:(NSArray*)servers
+{
     self = [super init];
     self.delegate = delegate;
     self.isInitiator = isInitiator;
-    self.doVideo = doVideo;
+    // TODO: Remove this (might have unintended side effects)
+    self.doVideo = YES;
 
     self.constraints = [[RTCMediaConstraints alloc]
                         initWithMandatoryConstraints:
                         @[
                           [[RTCPair alloc] initWithKey:@"OfferToReceiveAudio" value:@"true"],
-                          [[RTCPair alloc] initWithKey:@"OfferToReceiveVideo" value:(self.doVideo ? @"true" : @"false")]
+                          [[RTCPair alloc] initWithKey:@"OfferToReceiveVideo" value:@"true"]
                           ]
                         optionalConstraints:
                         @[
@@ -30,11 +32,7 @@
                           [[RTCPair alloc] initWithKey:@"DtlsSrtpKeyAgreement" value:@"true"]
                           ]
                         ];
-    return self;
-}
 
-- (void)onICEServers:(NSArray*)servers
-{
     self.queuedRemoteCandidates = [NSMutableArray array];
     self.peerConnectionFactory = [[RTCPeerConnectionFactory alloc] init];
     self.pcObserver = [[PCObserver alloc] initWithDelegate:self];
@@ -44,9 +42,13 @@
                                                  constraints:[self constraints]
                                                     delegate:self.pcObserver];
 
-    RTCMediaStream *lms =
-    [self.peerConnectionFactory mediaStreamWithLabel:@"ARDAMS"];
 
+    return self;
+}
+
+- (void)getDescription
+{
+    RTCMediaStream *lms = [self.peerConnectionFactory mediaStreamWithLabel:@"ARDAMS"];
     if ([self doVideo]) {
         // Local capture copied from AppRTC
         NSString* cameraID = nil;
@@ -78,6 +80,8 @@
 
     if ([self isInitiator]) {
         [self.peerConnection createOfferWithDelegate:self constraints:[self constraints]];
+    } else {
+        [self.peerConnection createAnswerWithDelegate:self constraints:[self constraints]];
     }
 }
 
@@ -123,14 +127,14 @@ didSetSessionDescriptionWithError:(NSError *)error {
                 NSLog(@"SDP onSuccess - drain candidates");
                 [self drainRemoteCandidates];
             }
-        } else {
+        }
+        else {
             if (self.peerConnection.localDescription != nil) {
                 [self drainRemoteCandidates];
-            } else {
-                [self.peerConnection createAnswerWithDelegate:self constraints:[self constraints]];
-            }
+            } //else {
+//                [self.peerConnection createAnswerWithDelegate:self constraints:[self constraints]];
+//            }
         }
-    
     });
 }
 
@@ -263,8 +267,23 @@ didSetSessionDescriptionWithError:(NSError *)error {
     } else if ([value compare:@"bye"] == NSOrderedSame) {
         [self disconnect];
     } else {
+
 //        NSAssert(NO, @"Invalid message: %@", message);
     }
+}
+
+- (void)receiveAnswer:(NSString *)sdpString
+{
+    RTCSessionDescription *sdp = [[RTCSessionDescription alloc]
+                                  initWithType:@"answer" sdp:[PhoneRTCDelegate preferISAC:sdpString]];
+    [self.peerConnection setRemoteDescriptionWithDelegate:self sessionDescription:sdp];
+}
+
+- (void)receiveOffer:(NSString *)sdpString
+{
+    RTCSessionDescription *sdp = [[RTCSessionDescription alloc]
+                                  initWithType:@"offer" sdp:[PhoneRTCDelegate preferISAC:sdpString]];
+    [self.peerConnection setRemoteDescriptionWithDelegate:self sessionDescription:sdp];
 }
 
 @end

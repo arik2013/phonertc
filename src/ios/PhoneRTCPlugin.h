@@ -8,6 +8,7 @@
 @property(nonatomic, strong) NSString *sendMessageCallbackId;
 @property(nonatomic, strong) RTCEAGLVideoView* localVideoView;
 @property(nonatomic, strong) RTCEAGLVideoView* remoteVideoView;
+@property(nonatomic, strong) RTCVideoTrack* remoteVideoTrack;
 @property(nonatomic, strong) RTCPeerConnectionFactory* factory;
 - (void)call:(CDVInvokedUrlCommand*)command;
 - (void)updateVideoPosition:(CDVInvokedUrlCommand*)command;

@@ -34,7 +34,7 @@
 @end
 
 @protocol ICEServerDelegate<NSObject>
-- (void)onICEServers:(NSArray*)servers;
+- (void)getDescription;
 @end
 
 @interface PhoneRTCDelegate : UIResponder<ICEServerDelegate,
@@ -52,10 +52,12 @@
 
 + (NSString *)preferISAC:(NSString *)origSDP;
 - (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator;
-- (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator andDoVideo:(BOOL)doVideo;
+- (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator andICEServers:(NSArray*)servers;
 - (void)drainRemoteCandidates;
 
 - (void)sendMessage:(NSData*)message;
 - (void)receiveMessage:(NSString*)message;
+- (void)receiveOffer:(NSString *)message;
+- (void)receiveAnswer:(NSString *)message;
 - (void)disconnect;
 @end
