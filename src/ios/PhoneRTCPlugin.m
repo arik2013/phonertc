@@ -111,14 +111,20 @@
 {
     self.sendMessageCallbackId = command.callbackId;
 
-    BOOL isInitator = [[command.arguments objectAtIndex:0] boolValue];
-	NSString *turnServerHost = (NSString *)[command.arguments objectAtIndex:1];
-	NSString *turnUsername = (NSString *)[command.arguments objectAtIndex:2];
-	NSString *turnPassword = (NSString *)[command.arguments objectAtIndex:3];
-    BOOL doVideo = false;
-    if ([command.arguments count] > 4 && [command.arguments objectAtIndex:4] != [NSNull null]) {
-        NSDictionary *localVideo = [[command.arguments objectAtIndex:4] objectForKey:@"localVideo"];
-        NSDictionary *remoteVideo = [[command.arguments objectAtIndex:4] objectForKey:@"remoteVideo"];
+    NSError *error;
+    NSDictionary *arguments = [NSJSONSerialization
+                               JSONObjectWithData:[[command.arguments objectAtIndex:0] dataUsingEncoding:NSUTF8StringEncoding]
+                               options:0
+                               error:&error];
+
+    BOOL isInitiator = [[arguments objectForKey:@"isInitiator"] boolValue];
+	NSString *turnServerHost = [[arguments objectForKey:@"turn"] objectForKey:@"host"];
+	NSString *turnUsername = [[arguments objectForKey:@"turn"] objectForKey:@"username"];
+	NSString *turnPassword = [[arguments objectForKey:@"turn"] objectForKey:@"password"];
+    BOOL doVideo = NO;
+    if ([arguments objectForKey:@"video"]) {
+        NSDictionary *localVideo = [[arguments objectForKey:@"video"] objectForKey:@"localVideo"];
+        NSDictionary *remoteVideo = [[arguments objectForKey:@"video"] objectForKey:@"remoteVideo"];
         localVideoView = [[RTCEAGLVideoView alloc] initWithFrame:CGRectMake([[localVideo objectForKey:@"x"] intValue], [[localVideo objectForKey:@"y"] intValue], [[localVideo objectForKey:@"width"] intValue], [[localVideo objectForKey:@"height"] intValue])];
         localVideoView.hidden = YES;
         localVideoView.userInteractionEnabled = NO;
@@ -129,7 +135,7 @@
         remoteVideoView.userInteractionEnabled = NO;
         [self.webView.superview addSubview:remoteVideoView];
 
-        doVideo = true;
+        doVideo = YES;
     }
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
     [pluginResult setKeepCallbackAsBool:true];
