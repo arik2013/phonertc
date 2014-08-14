@@ -2,11 +2,11 @@
 
 @implementation PhoneRTCDelegate
 
-@synthesize pcObserver = _pcObserver;
-@synthesize peerConnection = _peerConnection;
-@synthesize peerConnectionFactory = _peerConnectionFactory;
-@synthesize queuedRemoteCandidates = _queuedRemoteCandidates;
-@synthesize capturer = _capturer;
+@synthesize pcObserver;
+@synthesize peerConnection;
+@synthesize peerConnectionFactory;
+@synthesize queuedRemoteCandidates;
+@synthesize capturer;
 
 - (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator andICEServers:(NSArray*)servers
 {
@@ -127,9 +127,7 @@ didSetSessionDescriptionWithError:(NSError *)error {
         else {
             if (self.peerConnection.localDescription != nil) {
                 [self drainRemoteCandidates];
-            } //else {
-//                [self.peerConnection createAnswerWithDelegate:self constraints:[self constraints]];
-//            }
+            }
         }
     });
 }
@@ -207,7 +205,6 @@ didSetSessionDescriptionWithError:(NSError *)error {
     self.capturer = nil;
 
     [self sendMessage:[@"{\"type\": \"__disconnected\"}" dataUsingEncoding:NSUTF8StringEncoding]];
-    [self.delegate callComplete];
 }
 
 - (void)drainRemoteCandidates {
@@ -254,12 +251,12 @@ didSetSessionDescriptionWithError:(NSError *)error {
         } else {
             [self.peerConnection addICECandidate:candidate];
         }
-    } else if (([value compare:@"offer"] == NSOrderedSame) ||
-               ([value compare:@"answer"] == NSOrderedSame)) {
+    } else if ([value compare:@"offer"] == NSOrderedSame) {
         NSString *sdpString = [objects objectForKey:@"sdp"];
-        RTCSessionDescription *sdp = [[RTCSessionDescription alloc]
-                                      initWithType:value sdp:[PhoneRTCDelegate preferISAC:sdpString]];
-        [self.peerConnection setRemoteDescriptionWithDelegate:self sessionDescription:sdp];
+        [self receiveOffer:sdpString];
+    } else if ([value compare:@"answer"] == NSOrderedSame) {
+        NSString *sdpString = [objects objectForKey:@"sdp"];
+        [self receiveAnswer:sdpString];
     } else if ([value compare:@"bye"] == NSOrderedSame) {
         [self disconnect];
     } else {
@@ -268,18 +265,23 @@ didSetSessionDescriptionWithError:(NSError *)error {
     }
 }
 
+- (void)setRemoteDescription:(NSString*)description withType:(NSString *)type
+{
+    dispatch_async(dispatch_get_main_queue(), ^(void) {
+        RTCSessionDescription *sdp = [[RTCSessionDescription alloc]
+                                      initWithType:type sdp:[PhoneRTCDelegate preferISAC:description]];
+        [self.peerConnection setRemoteDescriptionWithDelegate:self sessionDescription:sdp];
+    });
+}
+
 - (void)receiveAnswer:(NSString *)sdpString
 {
-    RTCSessionDescription *sdp = [[RTCSessionDescription alloc]
-                                  initWithType:@"answer" sdp:[PhoneRTCDelegate preferISAC:sdpString]];
-    [self.peerConnection setRemoteDescriptionWithDelegate:self sessionDescription:sdp];
+    [self setRemoteDescription:sdpString withType:@"answer"];
 }
 
 - (void)receiveOffer:(NSString *)sdpString
 {
-    RTCSessionDescription *sdp = [[RTCSessionDescription alloc]
-                                  initWithType:@"offer" sdp:[PhoneRTCDelegate preferISAC:sdpString]];
-    [self.peerConnection setRemoteDescriptionWithDelegate:self sessionDescription:sdp];
+    [self setRemoteDescription:sdpString withType:@"offer"];
 }
 
 @end

@@ -26,7 +26,6 @@
 - (void)addLocalVideoTrack:(RTCVideoTrack *)track;
 - (void)addRemoteVideoTrack:(RTCVideoTrack *)track;
 - (void)resetUi;
-- (void)callComplete;
 @end
 
 @interface PCObserver : NSObject<RTCPeerConnectionDelegate>
@@ -50,11 +49,7 @@
 @property(assign) BOOL doVideo;
 @property(assign) BOOL isInitiator;
 
-+ (NSString *)preferISAC:(NSString *)origSDP;
 - (id)initWithDelegate:(id)delegate andIsInitiator:(BOOL)isInitiator andICEServers:(NSArray*)servers;
-- (void)drainRemoteCandidates;
-
-- (void)sendMessage:(NSData*)message;
 - (void)receiveMessage:(NSString*)message;
 - (void)receiveOffer:(NSString *)message;
 - (void)receiveAnswer:(NSString *)message;

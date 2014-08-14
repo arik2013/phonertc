@@ -178,11 +178,6 @@
     localVideoView = nil;
     remoteVideoView = nil;
     remoteVideoTrack = nil;
-}
-
-- (void)callComplete {
-    NSLog(@"Call Complete");
-    self.webRTC.delegate = nil;
     self.webRTC = nil;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
