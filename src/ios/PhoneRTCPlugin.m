@@ -64,7 +64,6 @@
                                options:0
                                error:&error];
 
-    BOOL doVideo = NO;
     if ([arguments objectForKey:@"video"]) {
         NSDictionary *localVideo = [[arguments objectForKey:@"video"] objectForKey:@"localVideo"];
         NSDictionary *remoteVideo = [[arguments objectForKey:@"video"] objectForKey:@"remoteVideo"];
@@ -84,7 +83,6 @@
             [self.webView.superview bringSubviewToFront:localVideoView];
             [self.webView.superview setNeedsDisplay];
         }
-        doVideo = YES;
     }
 
     if (self.webRTC) {
@@ -173,9 +171,9 @@
     self.localVideoView.videoTrack = nil;
     self.remoteVideoView.videoTrack = nil;
     localVideoView.hidden = YES;
-    [localVideoView removeFromSuperview];
+    [localVideoView performSelectorOnMainThread:@selector(removeFromSuperview) withObject:nil waitUntilDone:NO];
     remoteVideoView.hidden = YES;
-    [remoteVideoView removeFromSuperview];
+    [remoteVideoView performSelectorOnMainThread:@selector(removeFromSuperview) withObject:nil waitUntilDone:NO];
     localVideoView = nil;
     remoteVideoView = nil;
     remoteVideoTrack = nil;
