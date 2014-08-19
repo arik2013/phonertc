@@ -1,103 +1,48 @@
 var exec = require('cordova/exec');
 
-var videoElements;
+function MediaHandler (session, options) {
+  // TODO get STUN/TURN servers and RTCConstraints from session.ua and options,
+  // and pass them to a native method so it can create the PeerConnection
+}
 
-exports.updateVideoPosition = function updateVideoPosition () {
-  // This function should listen for scrolling and update the position of the elements to cordova exec
-  if (videoElements) {
-    var video = {
-      localVideo: getLayoutParams(videoElements.localVideo),
-      remoteVideo: getLayoutParams(videoElements.remoteVideo)
-    };
-    // Update Video Element positioning
-    exec(
-      null,
-      null,
-      'PhoneRTCPlugin',
-      'updateVideoPosition',
-      [video]);
+var nativeService = 'PhoneRTCPlugin';
+
+MediaHandler.prototype = {
+  'isReady': function isReady () {
+    // TODO implement like SIP.WebRTC.MediaHandler
+    return true;
+  },
+
+  'getDescription': function getDescription (onSuccess, onFailure, mediaHint) {
+    exec(onSuccess, onFailure, nativeService, 'getDescription', [mediaHint]);
+  },
+
+  'setDescription': function setDescription (sdp, onSuccess, onFailure) {
+    exec(onSuccess, onFailure, nativeService, 'setDescription', [sdp]);
+  },
+
+  'render': function render (renderHint) {
+    // TODO This will need to pass coordinates from the DOM to the native method.
+    // Updating on scroll/orientationchange/zoom also needs to be accounted
+    // for, and will be faster if done natively when possible.
+    throw 'not implemented';
+  },
+
+  'close': function close () {
+    // TODO This may need to be async to support being referred, unless we
+    // first support multiple calls
+    function noop () {}
+    exec(noop, noop, nativeService, 'close');
   }
 };
 
-if (cordova.platformId !== 'android') {
-  document.addEventListener("touchmove", exports.updateVideoPosition);
+// adapted from http://git.io/v1mMfg
+function newer (constructor) {
+  return function() {
+    var instance = Object.create(constructor.prototype);
+    var result = constructor.apply(instance, arguments);
+    return typeof result === 'object' ? result : instance;
+  };
 }
 
-function getLayoutParams (videoElement) {
-  var boundingRect = videoElement.getBoundingClientRect();
-  if (cordova.platformId === 'android') {
-    return {
-      devicePixelRatio: window.devicePixelRatio || 2,
-      // get these values by doing a lookup on the dom
-      x : boundingRect.left + window.scrollX,
-      y : boundingRect.top + window.scrollY,
-      width : videoElement.offsetWidth,
-      height : videoElement.offsetHeight
-    };
-  }
-  return {
-      // get these values by doing a lookup on the dom
-      x : boundingRect.left,
-      y : boundingRect.top,
-      width : videoElement.offsetWidth,
-      height : videoElement.offsetHeight
-    };
-}
-
-exports.call = function (options) {
-  // options should contain a video option if video is enabled
-  // sets the initial video options a dom listener needs to be added to watch for movements.
-  var execOptions = options || {};
-  if (options.video) {
-    videoElements = {
-      localVideo: options.video.localVideo,
-      remoteVideo: options.video.remoteVideo
-    };
-    execOptions.video = {
-      localVideo: getLayoutParams(videoElements.localVideo),
-      remoteVideo: getLayoutParams(videoElements.remoteVideo)
-    };
-  }
-
-  exec(
-    function (data) {
-      if (data.type === '__answered' && options.answerCallback) {
-        options.answerCallback();
-      } else if (data.type === '__disconnected' && options.disconnectCallback) {
-        options.disconnectCallback();
-      } else {
-        options.sendMessageCallback(data);
-      }
-    },
-    null,
-    'PhoneRTCPlugin',
-    'call',
-    [JSON.stringify(execOptions)]);
-};
-
-exports.setEnabledMedium = function (mediumType, enabled) {
-  exec(
-    function () {},
-    null,
-    'PhoneRTCPlugin',
-    'setEnabledMedium',
-    [mediumType, enabled]);
-}
-
-exports.receiveMessage = function (data) {
-  exec(
-    null,
-    null,
-    'PhoneRTCPlugin',
-    'receiveMessage',
-    [JSON.stringify(data)]);
-};
-
-exports.disconnect = function () {
-  exec(
-    null,
-    null,
-    'PhoneRTCPlugin',
-    'disconnect',
-    []);
-};
+module.exports = newer(MediaHandler);
