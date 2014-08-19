@@ -31,8 +31,7 @@ MediaHandler.prototype = {
   'close': function close () {
     // TODO This may need to be async to support being referred, unless we
     // first support multiple calls
-    function noop () {}
-    exec(noop, noop, nativeService, 'close');
+    exec(null, null, nativeService, 'close');
   }
 };
 
