@@ -1,11 +1,14 @@
 var exec = require('cordova/exec');
 
+var nativeService = 'PhoneRTCPlugin';
+
 function MediaHandler (session, options) {
   // TODO get STUN/TURN servers and RTCConstraints from session.ua and options,
   // and pass them to a native method so it can create the PeerConnection
+  var iceServers = [];
+  var RTCConstraints = {};
+  exec(null, null, nativeService, 'construct', [iceServers, RTCConstraints]);
 }
-
-var nativeService = 'PhoneRTCPlugin';
 
 MediaHandler.prototype = {
   'isReady': function isReady () {
