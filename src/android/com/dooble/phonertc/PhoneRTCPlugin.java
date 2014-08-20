@@ -21,7 +21,7 @@ public class PhoneRTCPlugin extends CordovaPlugin {
   @Override
   public boolean execute (String action, JSONArray args,
       CallbackContext callbacks) throws JSONException {
-    Actions.valueOf(action.toUpperCase()).execute(args, callbacks);
+    Actions.valueOf(action.toUpperCase()).execute(this, args, callbacks);
     return true;
   }
 
@@ -29,46 +29,53 @@ public class PhoneRTCPlugin extends CordovaPlugin {
   private enum Actions {
     CONSTRUCT {
       @Override
-      public void execute (JSONArray args, CallbackContext callbacks) {
+      public void execute (PhoneRTCPlugin self, JSONArray args,
+          CallbackContext callbacks) throws JSONException {
         // TODO
       }
     },
 
     ISREADY {
       @Override
-      public void execute (JSONArray args, CallbackContext callbacks) {
+      public void execute (PhoneRTCPlugin self, JSONArray args,
+          CallbackContext callbacks) throws JSONException {
         // TODO
       }
     },
 
     GETDESCRIPTION {
       @Override
-      public void execute (JSONArray args, CallbackContext callbacks) {
+      public void execute (PhoneRTCPlugin self, JSONArray args,
+          CallbackContext callbacks) throws JSONException {
         // TODO
       }
     },
 
     SETDESCRIPTION {
       @Override
-      public void execute (JSONArray args, CallbackContext callbacks) {
+      public void execute (PhoneRTCPlugin self, JSONArray args,
+          CallbackContext callbacks) throws JSONException {
         // TODO
       }
     },
 
     RENDER {
       @Override
-      public void execute (JSONArray args, CallbackContext callbacks) {
+      public void execute (PhoneRTCPlugin self, JSONArray args,
+          CallbackContext callbacks) throws JSONException {
         // TODO
       }
     },
 
     CLOSE {
       @Override
-      public void execute (JSONArray args, CallbackContext callbacks) {
+      public void execute (PhoneRTCPlugin self, JSONArray args,
+          CallbackContext callbacks) throws JSONException {
         // TODO
       }
     };
 
-    public abstract void execute (JSONArray args, CallbackContext callbacks);
+    public abstract void execute (PhoneRTCPlugin self, JSONArray args,
+        CallbackContext callbacks) throws JSONException;
   }
 }
