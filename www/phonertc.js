@@ -5,9 +5,32 @@ var nativeService = 'PhoneRTCPlugin';
 function MediaHandler (session, options) {
   // TODO get STUN/TURN servers and RTCConstraints from session.ua and options,
   // and pass them to a native method so it can create the PeerConnection
-  var iceServers = [];
-  var RTCConstraints = {};
-  exec(null, null, nativeService, 'construct', [iceServers, RTCConstraints]);
+  var
+    servers = [],
+    config = session.ua.configuration,
+    stunServers = options.stunServers || config.stunServers,
+    turnServers = options.turnServers || config.turnServers;
+  this.RTCConstraints = options.RTCConstraints || {};
+
+  stunServers.forEach(function (stunURI) {
+    servers.push({
+      'uri': stunURI,
+      'username': '',
+      'password': ''
+    });
+  });
+
+  turnServers.forEach(function (turn) {
+    turn.urls.forEach(function (uri) {
+      servers.push({
+        'uri': uri,
+        'username': turn.username,
+        'password': turn.password
+      });
+    });
+  });
+
+  exec(null, null, nativeService, 'construct', [servers, this.RTCConstraints]);
 }
 
 MediaHandler.prototype = {
